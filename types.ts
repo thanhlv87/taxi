@@ -1,8 +1,6 @@
-
 export interface Taxi {
   name: string;
   phone: string;
-  logoUrl?: string;
 }
 
 export interface TaxiData {

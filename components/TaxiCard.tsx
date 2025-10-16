@@ -6,26 +6,14 @@ interface TaxiCardProps {
 }
 
 const TaxiCard: React.FC<TaxiCardProps> = ({ taxi }) => {
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    e.currentTarget.src = `https://picsum.photos/seed/${taxi.name}/100/100`;
-    e.currentTarget.classList.add('object-contain');
-  };
-
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden flex flex-col">
       <div className="h-24 bg-slate-100 dark:bg-slate-700 flex items-center justify-center p-2">
-        {taxi.logoUrl ? (
-          <img
-            src={taxi.logoUrl}
-            alt={`${taxi.name} logo`}
-            className="max-h-full max-w-full object-contain"
-            onError={handleImageError}
-          />
-        ) : (
-          <div className="w-16 h-16 bg-slate-200 dark:bg-slate-600 rounded-full flex items-center justify-center">
-            <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold text-center leading-tight">No Logo</span>
-          </div>
-        )}
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/8587/8587864.png"
+          alt="Biểu tượng taxi"
+          className="h-16 w-16 object-contain"
+        />
       </div>
       <div className="p-3 flex flex-col flex-grow">
         <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 truncate">{taxi.name}</h3>

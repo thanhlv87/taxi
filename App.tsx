@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { fetchTaxisByLocation, fetchTaxisByProvinceName } from './services/geminiService';
+import { fetchTaxisByProvinceName } from './services/geminiService';
+import { getProvinceFromCoordinates } from './services/googleMapsService';
 import { TaxiData, AppStatus } from './types';
 import TaxiCard from './components/TaxiCard';
 import StatusDisplay from './components/StatusDisplay';
@@ -50,7 +51,6 @@ const App: React.FC = () => {
 
   const handleProvinceSelect = useCallback(async (province: string) => {
     setStatus('FETCHING_TAXIS');
-    // Set location name preemptively for the loading message
     setTaxiData({ locationName: province, taxis: [] });
     setError(null);
     try {
@@ -71,39 +71,34 @@ const App: React.FC = () => {
     }
     
     setStatus('FETCHING_LOCATION');
+    setError(null);
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
-          setStatus('FETCHING_TAXIS');
           const { latitude, longitude } = position.coords;
-          const data = await fetchTaxisByLocation(latitude, longitude);
-          setTaxiData(data);
-          setStatus('SUCCESS');
+          const provinceName = await getProvinceFromCoordinates(latitude, longitude);
+          await handleProvinceSelect(provinceName);
         } catch (apiError) {
-          setStatus('ERROR');
-          setError(apiError instanceof Error ? apiError.message : 'Lỗi không xác định từ API.');
+          setStatus('PROMPTING_PROVINCE');
+          setError(apiError instanceof Error ? apiError.message : 'Lỗi không xác định khi xác định vị trí. Vui lòng chọn thủ công.');
         }
       },
       (geoError) => {
         setStatus('PROMPTING_PROVINCE');
-        switch (geoError.code) {
-          case geoError.PERMISSION_DENIED:
-            setError('Bạn đã từ chối quyền truy cập vị trí. Vui lòng chọn thủ công.');
-            break;
-          case geoError.POSITION_UNAVAILABLE:
-            setError('Không thể xác định vị trí của bạn. Vui lòng chọn thủ công.');
-            break;
-          case geoError.TIMEOUT:
-            setError('Yêu cầu vị trí đã hết hạn. Vui lòng chọn thủ công.');
-            break;
-          default:
-            setError('Đã xảy ra lỗi khi lấy vị trí. Vui lòng chọn thủ công.');
-            break;
+        let message = 'Đã xảy ra lỗi khi lấy vị trí. Vui lòng chọn thủ công.';
+        if (geoError.code === geoError.PERMISSION_DENIED) {
+            message = 'Bạn đã từ chối quyền truy cập vị trí. Vui lòng chọn thủ công.';
+        } else if (geoError.code === geoError.POSITION_UNAVAILABLE) {
+            message = 'Không thể xác định vị trí của bạn. Vui lòng chọn thủ công.';
+        } else if (geoError.code === geoError.TIMEOUT) {
+            message = 'Yêu cầu vị trí đã hết hạn. Vui lòng thử lại ở nơi có tín hiệu tốt hơn hoặc chọn thủ công.';
         }
+        setError(message);
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+      { enableHighAccuracy: false, timeout: 30000, maximumAge: 60000 }
     );
-  }, []);
+  }, [handleProvinceSelect]);
 
   const renderContent = () => {
     if (status !== 'SUCCESS') {
@@ -187,7 +182,7 @@ const App: React.FC = () => {
         </div>
       </main>
       <footer className="text-center p-4 text-sm text-slate-500 dark:text-slate-400">
-        <p>&copy; {new Date().getFullYear()} Taxi Finder Vietnam. Powered by Gemini.</p>
+        <p>&copy; {new Date().getFullYear()} Taxi Finder Vietnam. Powered by Gemini & ThanhLV87.</p>
       </footer>
     </div>
   );
